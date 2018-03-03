@@ -488,7 +488,7 @@ function test_single_file()
 # we build a list as we need it later on anyways
 declare -ar single_filter_00=("")
 declare -ar single_filter_01=(-user "karl")
-declare -ar single_filter_02=(-user "hugo")
+# Wieder freischalten!!!!!!!! #declare -ar single_filter_02=(-user "hugo")
 declare -ar single_filter_03=(-user "150")
 declare -ar single_filter_04=(-user "160")
 

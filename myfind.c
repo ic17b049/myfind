@@ -11,15 +11,19 @@
 #include <fnmatch.h>
 
 #include <libgen.h>
+
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <stdio.h>
+#include <ctype.h>
 //exit(1) unknown option
 //exit(2) expect Option
 //exit(3) expect Param
-
-//maybe no global
-
-
-// Test Script  /usr/local/bin/test-find.sh -r /usr/bin/find
-
 
 struct optionItem {
 	char *name;
@@ -95,9 +99,27 @@ int main(int argc, char* argv[])
 		if(optItem != NULL && optionPos != 0 && expParam == 0){
 			if(strcmp(optItem->name,"-user") == 0){
 				
-				struct passwd *userInfo = getpwnam(argv[(optionPos +1 )]);
+				struct passwd *userInfo;
 				
-				if(userInfo == NULL) exit(1);  // unknown User
+				//userInfo = getpwnam(argv[(optionPos +1 )]);
+				//if(userInfo == NULL) exit(55);  // unknown User
+				
+				
+				if(isdigit(argv[(optionPos +1 )][0])== 0){
+					long int uid = strtol(argv[(optionPos +1 )], NULL, 10);
+					userInfo = getpwuid(uid);
+					if(userInfo == NULL) exit(55);  // unknown User
+				}else{
+					userInfo = getpwnam(argv[(optionPos +1 )]);
+					if(userInfo == NULL) exit(55);  // unknown User
+				}
+				
+				
+				
+				
+				
+				
+				
 			}
 			
 			if(strcmp(optItem->name,"-type") == 0){
@@ -139,13 +161,15 @@ void printTest(const char *text){
 
 void do_dir(const char * dir_name,  char * parms[]){
 	
+
+	
+	
 	//printTest(dir_name);
 
 	//char* dirname = "/var/tmp/test-find/simple/";
 	//char* filename = "%*u";
 	char dirname[255] = { '\0' };
 	char filename[255] = { '\0' };
-	
 	const char* tmp = dir_name;
 	int j = 0;
 	
@@ -158,8 +182,6 @@ void do_dir(const char * dir_name,  char * parms[]){
 		k++;
 		tmpSlash++;
 	}
-	
-	//printf("____%i____",k);
 	
 	strncpy(dirname, dir_name, k);
 	tmp = tmp + k;
@@ -175,10 +197,7 @@ void do_dir(const char * dir_name,  char * parms[]){
 		filename[j] = tmp[i];
 		j++;
 	}
-	//strncpy(filename, tmp, strlen(tmp));
-	
-	
-	//if(strlen(filename) == 0) filename[0] = '*';
+
 
 	DIR *currentDirectory =  opendir(dirname);
 
@@ -186,9 +205,45 @@ void do_dir(const char * dir_name,  char * parms[]){
 	
 	struct dirent *currentDirEnt = NULL;
 	while((currentDirEnt = readdir(currentDirectory)) != NULL){
+		int print = 1;
 		int found = fnmatch(filename, currentDirEnt->d_name, 0);
 		
-		if(found == 0) {
+		if(parms[0] != NULL){
+			if( strcmp(parms[0],"-user") == 0){
+
+				char ganzerPfad[1024] = {'\n'};
+				
+				
+				struct passwd *userInfo = getpwnam(parms[1]);
+				
+				
+				strcpy(ganzerPfad,dirname);
+				strcat(ganzerPfad,currentDirEnt->d_name);
+				uid_t userid =  userInfo->pw_uid;  
+				
+				int fd = open(ganzerPfad, O_RDONLY);
+				
+
+				if(fd >= 0) { 
+					struct stat buffer;
+					fstat(fd, &buffer);
+					if(buffer.st_uid != userid){
+						print = 0;
+					}
+				}
+
+				
+			}
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+		if(found == 0 && print == 1) {
 			printf("%s%s\n",dirname,currentDirEnt->d_name);
 		}
 	
@@ -242,5 +297,6 @@ int isValidOption(char *chkOption){
 	
 	return 0;
 }
+
 
 
