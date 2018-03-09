@@ -27,7 +27,6 @@ set -u          # terminate on uninitialized variables
 # the to be tested program
 TO_BE_TESTED_FIND="./myfind"
 # the known correct program
-#KNOWN_CORRECT_FIND="/usr/local/bin/bic-myfind"
 KNOWN_CORRECT_FIND="/usr/bin/find"
 # guess what ...
 QUIET=0
@@ -298,8 +297,10 @@ verbose "${TO_BE_TESTED_FIND}" "${TOUSEDIR}" -die-option-gibt-es-nicht
 if "${TO_BE_TESTED_FIND}" "${TOUSEDIR}" -die-option-gibt-es-nicht >&/dev/null </dev/null
 then
     failed "No exit code indicating failure when calling ${TO_BE_TESTED_FIND} with \"${EMPH_ON}${TOUSEDIR} -die-option-gibt-es-nicht${EMPH_ON}\""
+    (( FAILURE_COUNT++ ))
 else
     success "Exit code indicating failure when calling ${TO_BE_TESTED_FIND} with \"${EMPH_ON}${TOUSEDIR} -die-option-gibt-es-nicht${EMPH_OFF}\""
+    (( SUCCESS_COUNT++ ))
 fi
 
 # ------------------------------------------------------------------------------------------------------
@@ -312,8 +313,10 @@ function test_param()
     if "${TO_BE_TESTED_FIND}" "${TOUSEDIR}" "$@" >&/dev/null </dev/null
     then
         failed "No exit code indicating failure when calling ${TO_BE_TESTED_FIND} with \"${EMPH_ON}${TOUSEDIR} ${@%% *}${EMPH_OFF}\""
+        (( FAILURE_COUNT++ ))
     else
         success "Exit code indicating failure when calling ${TO_BE_TESTED_FIND} with \"${EMPH_ON}${TOUSEDIR} ${@%% *}${EMPH_OFF}\""
+        (( SUCCESS_COUNT++ ))
     fi
 }
 
@@ -388,7 +391,7 @@ function run_command()
     # if the called program is terminated by a signal, we want to see the complete
     # commandline (and not "$@" ....)
     # diff --ignore-space-change cannot handle missings space at the head and the end of the line
-    eval "$@" 2> "${stderrfilename}" | sed -e 's/^[[:space:]]//' -e 's/[[:space:]]+$//' > "${stdoutfilename}"
+    eval "$@" 2> "${stderrfilename}" | sed -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$//' > "${stdoutfilename}"
     local -r rc="${PIPESTATUS[0]}"
     if [ "$rc" -eq "0" ]
     then
@@ -488,7 +491,7 @@ function test_single_file()
 # we build a list as we need it later on anyways
 declare -ar single_filter_00=("")
 declare -ar single_filter_01=(-user "karl")
-# Wieder freischalten!!!!!!!! #declare -ar single_filter_02=(-user "hugo")
+#declare -ar single_filter_02=(-user "hugo")
 declare -ar single_filter_03=(-user "150")
 declare -ar single_filter_04=(-user "160")
 
@@ -496,7 +499,6 @@ declare -ar single_filter_10=(-name "so")
 declare -ar single_filter_11=(-name "'*hidden'")
 declare -ar single_filter_12=(-name "'*file'") # trigger failure if FNM_PERIOD is used
 declare -ar single_filter_13=(-name "'file\\with\\escape\\character'") # trigger failure if FNM_NOESCAPE is not used
-
 declare -ar single_filter_20=(-type "b")
 declare -ar single_filter_21=(-type "c")
 declare -ar single_filter_22=(-type "d")
@@ -529,7 +531,6 @@ then
     declare -ar single_filter_70=(-nogroup)
 fi
 
-if true; then
 # and do something: first, just one of them
 for var in ${!single_filter_*}
 do
@@ -573,10 +574,6 @@ do
     done
   done
 done
-
-exit 0
-# the below is untested ....
-fi
 
 # ------------------------------------------------------------------------------------------------------
 echo -e "${EMPH_ON}----- Test 4.0: Test the whole simple directory ----${EMPH_OFF}"

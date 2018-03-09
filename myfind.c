@@ -26,6 +26,17 @@
 #include <ctype.h>
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h> 
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
+
+
+
 struct optionItem {
 	char *name;
 	int params;
@@ -57,6 +68,9 @@ struct optionItem *searchOption(char* optName);
 void do_dir(const char * dir_name,  char * parms[]);
 
 char **cmdLine;
+void lsprint(char* path);
+
+void spclPrint(char *str);
 
 int main(int argc, char* argv[])
 {	
@@ -190,6 +204,8 @@ void do_dir(const char * dir_name,  char * parms[]){
 		strcat(ganzerPfad,currentDirEnt->d_name);
 		int fd = open(ganzerPfad, O_RDONLY);
 		if(parms[0] != NULL){
+			
+			
 			if( strcmp(parms[0],"-user") == 0){
 
 				uid_t userid = getUidFromString(parms[1]);
@@ -202,13 +218,30 @@ void do_dir(const char * dir_name,  char * parms[]){
 				}
 			}
 			
+		
+			if( strcmp(parms[0],"-nouser") == 0){
+
+				//uid_t userid = getUidFromString(parms[1]);
+				if(fd >= 0) { 
+					struct stat fileStat;
+					fstat(fd, &fileStat);
+					
+					
+					
+					if(getpwuid(fileStat.st_uid) != NULL ){
+						print = 0;
+					}
+				}
+			}			
 			
 			
 			if( strcmp(parms[0],"-name") == 0){
 				if(fnmatch(parms[1], currentDirEnt->d_name, 0) != 0) print = 0;
 			}
 			
-
+			if( strcmp(parms[0],"-path") == 0){
+				if(fnmatch(parms[1], ganzerPfad, 0) != 0) print = 0;
+			}
 			
 			
 			if( strcmp(parms[0],"-type") == 0){
@@ -232,10 +265,26 @@ void do_dir(const char * dir_name,  char * parms[]){
 
 			
 			
+//   40    0 -rw-rw-rw-   1 root     root            0 Mar  4 21:19 /var/tmp/test-find/simple/%*u			
+			
+			
+			
 		}
 
 		if(found == 0 && print == 1) {
-			printf("%s%s\n",dirname,currentDirEnt->d_name);
+			int tmpsmthgPrinted = 0;
+			if(parms[0] != NULL){
+				if( strcmp(parms[0],"-ls") == 0){
+					lsprint(ganzerPfad);
+					tmpsmthgPrinted = 1;
+				}
+			}
+			
+			if(tmpsmthgPrinted == 0){
+				printf("%s%s\n",dirname,currentDirEnt->d_name);
+			}
+			
+			
 		}
 	
 	
@@ -304,5 +353,105 @@ uid_t getUidFromString(char *id){
 		return userinfo->pw_uid;;
 	}
 	return 0;
+}
+
+
+void lsprint(char* path){
+	
+	
+	//char path[] = "/home/ic17b049/myfind/.git/branches";
+	struct stat buf;
+	int statRes = lstat(path, &buf);
+	
+	struct passwd *userInfo;
+	struct group *groupInfo;
+	
+	if(statRes != 0){
+		printf("ERROR lstat");
+		exit(1);
+	}
+	
+	// Inode
+	printf("%6lu ",buf.st_ino); 
+	printf(" ");
+	
+	
+	//
+	
+	printf("%3lu", buf.st_blocks/2);
+	printf(" ");
+	// File type
+	char fileType = '?';
+	if(S_ISREG(buf.st_mode)) fileType = '-';
+	else if(S_ISDIR(buf.st_mode)) fileType = 'd';
+	else if(S_ISBLK(buf.st_mode)) fileType = 'b';
+	else if(S_ISCHR(buf.st_mode)) fileType = 'c';
+	else if(S_ISFIFO(buf.st_mode)) fileType = 'p';
+	else if(S_ISLNK(buf.st_mode)) fileType = 'l';
+
+	
+	printf("%c", fileType);
+	
+	// Permision
+	
+	printf("%c", (buf.st_mode & S_IRUSR)? 'r' : '-');
+	printf("%c", (buf.st_mode & S_IWUSR)? 'w' : '-');
+	printf("%c", (buf.st_mode & S_IXUSR)? 'x' : '-');
+
+	printf("%c", (buf.st_mode & S_IRGRP)? 'r' : '-');
+	printf("%c", (buf.st_mode & S_IWGRP)? 'w' : '-');
+	printf("%c", (buf.st_mode & S_IXGRP)? 'x' : '-');
+
+	printf("%c", (buf.st_mode & S_IROTH)? 'r' : '-');
+	printf("%c", (buf.st_mode & S_IWOTH)? 'w' : '-');
+	printf("%c", (buf.st_mode & S_IXOTH)? 'x' : '-');	
+	
+	printf(" ");	
+	
+	//Hardlinks
+	
+	printf("%3i",buf.st_nlink); 
+	printf(" ");
+	
+	
+	//Username
+	
+	userInfo =  getpwuid(buf.st_uid);
+	
+	
+	
+	printf("%-8s", (userInfo!=NULL) ? userInfo->pw_name : "999999");		
+	printf(" ");		
+
+	//Groupname
+
+	groupInfo = getgrgid(buf.st_gid);
+	printf("%-8s", groupInfo->gr_name);		
+	printf(" ");		
+	
+	// Size in Bytes
+	printf("%8lu",buf.st_size); 
+	printf(" ");	
+
+	// Time
+	
+	char buff[20];
+	time_t time = buf.st_mtime;
+	strftime(buff, 20, "%b %e %H:%M", localtime(&time));
+	printf("%s",buff);
+	printf(" ");
+	//Path
+	//printf("%s",path);
+	spclPrint(path);
+	printf("\n");
+}
+
+void spclPrint(char *str){
+	while(*str != '\0'){
+		if(*str == '\\') printf("\\\\");
+		else printf("%c",*str);
+		str++;
+	}
+	
 }
 
