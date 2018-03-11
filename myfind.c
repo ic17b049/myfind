@@ -35,6 +35,7 @@
 #include <grp.h>
 #include <time.h>
 
+#include <libgen.h>
 
 
 struct optionItem {
@@ -65,7 +66,7 @@ int isValidOption(char *option);
 int in_array ( char *needle , char *haystack[], int arraySize);
 struct optionItem *searchOption(char* optName);
 
-void do_file(const char * dir_name,  char * parms[]);
+void do_file(char * dir_name,  char * parms[]);
 
 char **cmdLine;
 void lsprint(char* path);
@@ -164,107 +165,64 @@ void do_dir(const char * dir_name,  char * parms[]){
 
 
 
-void do_file(const char * dir_name,  char * parms[]){
+void do_file(char * dir_name,  char *parms[]){
+
+	int print = 1;
+	int smthPrinted = 0;
+	int currentParam = 0;
+	struct stat newStatBuffer;
+	char *fileName = basename(dir_name);
+	lstat(dir_name, &newStatBuffer);
 	
-	char dirname[255] = { '\0' };
-	char filename[255] = { '\0' };
-	const char* tmp = dir_name;
-	int j = 0;
-	
-	
-	char *lastSlash = strrchr ( dir_name, '/' ); 
-	const char *tmpSlash = dir_name;
-	int k = 1;
-	
-	while(lastSlash != tmpSlash){
-		k++;
-		tmpSlash++;
-	}
-	
-	strncpy(dirname, dir_name, k);
-	tmp = tmp + k;
-	
-	for(int i = 0; i<strlen(tmp); i++){
-		if(tmp[i] == '*' || tmp[i] == '?' || tmp[i] == '['|| tmp[i] == '\\') {
-			filename[j] = '\\';
-			j++;
+	if(parms[currentParam] != NULL  && print == 1){
+
+		if( strcmp(parms[currentParam],"-user") == 0){
+			uid_t userid = getUidFromString(parms[currentParam + 1]);
+			if(newStatBuffer.st_uid != userid)	print = 0;
 		}
-
-		filename[j] = tmp[i];
-		j++;
-	}
-
-	DIR *currentDirectory =  opendir(dirname);
-
-	if(currentDirectory == NULL) errorMsg(1); // Error Opndir
-	
-	struct dirent *currentDirEnt = NULL;
-	
-	
-	
-	
-	
-	while((currentDirEnt = readdir(currentDirectory)) != NULL){
-
-		int print = 1;
-		int found = fnmatch(filename, currentDirEnt->d_name, 0);
-
-		char ganzerPfad[1024] = {'\0'};
-
-		strcpy(ganzerPfad,dirname);
-		strcat(ganzerPfad,currentDirEnt->d_name);
 		
-		struct stat newStatBuffer;
-		lstat(ganzerPfad, &newStatBuffer);
+		if( strcmp(parms[currentParam],"-nouser") == 0){
+			if(getpwuid(newStatBuffer.st_uid) != NULL ) print = 0;
+		}			
 		
-		if(parms[0] != NULL){
-
-			if( strcmp(parms[0],"-user") == 0){
-				uid_t userid = getUidFromString(parms[1]);
-				if(newStatBuffer.st_uid != userid)	print = 0;
-			}
-			
-			if( strcmp(parms[0],"-nouser") == 0){
-				if(getpwuid(newStatBuffer.st_uid) != NULL ) print = 0;
-			}			
-			
-			if( strcmp(parms[0],"-name") == 0){
-				if(fnmatch(parms[1], currentDirEnt->d_name, 0) != 0) print = 0;
-			}
-			if( strcmp(parms[0],"-path") == 0){
-				if(fnmatch(parms[1], ganzerPfad, 0) != 0) print = 0;
-			}
-			
-			if( strcmp(parms[0],"-type") == 0){
-				print = 0;
-				switch((int)parms[1][0]) {
-					case 'f': if(S_ISREG(newStatBuffer.st_mode)) print = 1; break;
-					case 'd': if(S_ISDIR(newStatBuffer.st_mode)) print = 1; break;
-					case 'b': if(S_ISBLK(newStatBuffer.st_mode)) print = 1; break;
-					case 'c': if(S_ISCHR(newStatBuffer.st_mode)) print = 1; break;
-					case 'p': if(S_ISFIFO(newStatBuffer.st_mode)) print = 1; break;
-					case 'l': if(S_ISLNK(newStatBuffer.st_mode)) print = 1; break;
-					case 's':  print = 0; break;
-					default: errorMsg(99); break;
-				}			
-			}
+		if( strcmp(parms[currentParam],"-name") == 0){
+			if(fnmatch(parms[currentParam + 1], fileName, 0) != 0) print = 0;
 		}
+		if( strcmp(parms[currentParam],"-path") == 0){
+			if(fnmatch(parms[currentParam + 1], dir_name, 0) != 0) print = 0;
+		}
+		
+		if( strcmp(parms[currentParam],"-type") == 0){
+			char currFileType = '\0';
 
-		if(found == 0 && print == 1) {
-			int tmpsmthgPrinted = 0;
-			if(parms[0] != NULL){
-				if( strcmp(parms[0],"-ls") == 0){
-					lsprint(ganzerPfad);
-					tmpsmthgPrinted = 1;
-				}
-			}
-			
-			if(tmpsmthgPrinted == 0){
-				printf("%s%s\n",dirname,currentDirEnt->d_name);
-			}
+			if(S_ISREG(newStatBuffer.st_mode)) currFileType = 'f';
+			if(S_ISDIR(newStatBuffer.st_mode)) currFileType = 'd';
+			if(S_ISBLK(newStatBuffer.st_mode)) currFileType = 'b';
+			if(S_ISCHR(newStatBuffer.st_mode)) currFileType = 'c';
+			if(S_ISFIFO(newStatBuffer.st_mode)) currFileType = 'p';
+			if(S_ISLNK(newStatBuffer.st_mode)) currFileType = 'l';
+			if(S_ISSOCK(newStatBuffer.st_mode)) currFileType = 's';
+		
+			if(currFileType != parms[currentParam + 1][0]) print = 0;
+		}
+		
+		if( strcmp(parms[currentParam],"-print") == 0){
+			printf("%s\n",dir_name);
+			smthPrinted = 1;
+		}		
+		
+		if( strcmp(parms[currentParam],"-ls") == 0){
+			lsprint(dir_name);
+			smthPrinted = 1;
 		}
 	}
+
+	if(print == 1 && smthPrinted == 0) {
+		printf("%s\n",dir_name);
+	}
+
 }
+
 
 
 int in_array ( char *needle , char *haystack[], int arraySize){
