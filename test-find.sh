@@ -26,6 +26,7 @@ set -u          # terminate on uninitialized variables
 
 # the to be tested program
 TO_BE_TESTED_FIND="./myfind"
+#TO_BE_TESTED_FIND="/usr/bin/find"
 # the known correct program
 KNOWN_CORRECT_FIND="/usr/bin/find"
 # guess what ...

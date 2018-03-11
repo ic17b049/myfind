@@ -57,7 +57,7 @@ char *option[] = {
 
 
 void errorMsg(int i);
-
+void do_dir(const char * dir_name,  char * parms[]);
 uid_t getUidFromString(char *id);
 
 
@@ -65,12 +65,13 @@ int isValidOption(char *option);
 int in_array ( char *needle , char *haystack[], int arraySize);
 struct optionItem *searchOption(char* optName);
 
-void do_dir(const char * dir_name,  char * parms[]);
+void do_file(const char * dir_name,  char * parms[]);
 
 char **cmdLine;
 void lsprint(char* path);
-
 void spclPrint(char *str);
+
+
 
 int main(int argc, char* argv[])
 {	
@@ -121,14 +122,15 @@ int main(int argc, char* argv[])
 				
 				if(validType == NULL) errorMsg(6);  // unknown file type
 			}
-				
 		}
 	}
 	
 	if(expParam > 0) errorMsg(7);;  // expect additional option at the end;
 	
-	do_dir(argv[1], &argv[2]);
 
+	do_file(argv[1], &argv[2]);	
+	
+	
 	return 0;
 }
 
@@ -150,14 +152,19 @@ void errorMsg(int i){
 		case 7: fprintf( stderr, "Error: expect additional option at the end"); exit(i); break;
 		case 8: fprintf( stderr, "Error"); exit(i); break;
 		case 9: fprintf( stderr, "Error"); exit(i); break;		
-		
-		
-		
 		default: printf("Another Error"); exit(i); break;
 	}
 }
 
+
+
 void do_dir(const char * dir_name,  char * parms[]){
+	
+}
+
+
+
+void do_file(const char * dir_name,  char * parms[]){
 	
 	char dirname[255] = { '\0' };
 	char filename[255] = { '\0' };
@@ -182,9 +189,7 @@ void do_dir(const char * dir_name,  char * parms[]){
 			filename[j] = '\\';
 			j++;
 		}
-		
-		
-		
+
 		filename[j] = tmp[i];
 		j++;
 	}
@@ -194,7 +199,13 @@ void do_dir(const char * dir_name,  char * parms[]){
 	if(currentDirectory == NULL) errorMsg(1); // Error Opndir
 	
 	struct dirent *currentDirEnt = NULL;
+	
+	
+	
+	
+	
 	while((currentDirEnt = readdir(currentDirectory)) != NULL){
+
 		int print = 1;
 		int found = fnmatch(filename, currentDirEnt->d_name, 0);
 
@@ -202,73 +213,41 @@ void do_dir(const char * dir_name,  char * parms[]){
 
 		strcpy(ganzerPfad,dirname);
 		strcat(ganzerPfad,currentDirEnt->d_name);
-		int fd = open(ganzerPfad, O_RDONLY);
+		
+		struct stat newStatBuffer;
+		lstat(ganzerPfad, &newStatBuffer);
+		
 		if(parms[0] != NULL){
-			
-			
-			if( strcmp(parms[0],"-user") == 0){
 
+			if( strcmp(parms[0],"-user") == 0){
 				uid_t userid = getUidFromString(parms[1]);
-				if(fd >= 0) { 
-					struct stat fileStat;
-					fstat(fd, &fileStat);
-					if(fileStat.st_uid != userid){
-						print = 0;
-					}
-				}
+				if(newStatBuffer.st_uid != userid)	print = 0;
 			}
 			
-		
 			if( strcmp(parms[0],"-nouser") == 0){
-
-				//uid_t userid = getUidFromString(parms[1]);
-				if(fd >= 0) { 
-					struct stat fileStat;
-					fstat(fd, &fileStat);
-					
-					
-					
-					if(getpwuid(fileStat.st_uid) != NULL ){
-						print = 0;
-					}
-				}
+				if(getpwuid(newStatBuffer.st_uid) != NULL ) print = 0;
 			}			
-			
 			
 			if( strcmp(parms[0],"-name") == 0){
 				if(fnmatch(parms[1], currentDirEnt->d_name, 0) != 0) print = 0;
 			}
-			
 			if( strcmp(parms[0],"-path") == 0){
 				if(fnmatch(parms[1], ganzerPfad, 0) != 0) print = 0;
 			}
 			
-			
 			if( strcmp(parms[0],"-type") == 0){
-				if(fd >= 0) { 
-					struct stat fileStat;
-					fstat(fd, &fileStat);
-					print = 0;
-					switch((int)parms[1][0]) {
-						case 'f': if(S_ISREG(fileStat.st_mode)) print = 1; break;
-						case 'd': if(S_ISDIR(fileStat.st_mode)) print = 1; break;
-						case 'b': if(S_ISBLK(fileStat.st_mode)) print = 1; break;
-						case 'c': if(S_ISCHR(fileStat.st_mode)) print = 1; break;
-						case 'p': if(S_ISFIFO(fileStat.st_mode)) print = 1; break;
-						case 'l': if(S_ISLNK(fileStat.st_mode)) print = 1; break;
-						case 's':  print = 0; break;
-						default: errorMsg(99); break;
-					}
-				}				
-				
+				print = 0;
+				switch((int)parms[1][0]) {
+					case 'f': if(S_ISREG(newStatBuffer.st_mode)) print = 1; break;
+					case 'd': if(S_ISDIR(newStatBuffer.st_mode)) print = 1; break;
+					case 'b': if(S_ISBLK(newStatBuffer.st_mode)) print = 1; break;
+					case 'c': if(S_ISCHR(newStatBuffer.st_mode)) print = 1; break;
+					case 'p': if(S_ISFIFO(newStatBuffer.st_mode)) print = 1; break;
+					case 'l': if(S_ISLNK(newStatBuffer.st_mode)) print = 1; break;
+					case 's':  print = 0; break;
+					default: errorMsg(99); break;
+				}			
 			}
-
-			
-			
-//   40    0 -rw-rw-rw-   1 root     root            0 Mar  4 21:19 /var/tmp/test-find/simple/%*u			
-			
-			
-			
 		}
 
 		if(found == 0 && print == 1) {
@@ -283,14 +262,8 @@ void do_dir(const char * dir_name,  char * parms[]){
 			if(tmpsmthgPrinted == 0){
 				printf("%s%s\n",dirname,currentDirEnt->d_name);
 			}
-			
-			
 		}
-	
-	
 	}
-		
-
 }
 
 
