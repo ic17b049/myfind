@@ -4,39 +4,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <sys/types.h>
 #include <pwd.h>
-
-#include <sys/types.h>
 #include <dirent.h>
-
 #include <fnmatch.h>
-
 #include <libgen.h>
-
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <stdio.h>
 #include <ctype.h>
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h> 
-#include <pwd.h>
 #include <grp.h>
 #include <time.h>
-
-#include <libgen.h>
-
 
 struct optionItem {
 	char *name;
@@ -151,7 +129,7 @@ void errorMsg(int i){
 		case 5: fprintf( stderr, "Error: unknown User"); exit(i); break;
 		case 6: fprintf( stderr, "Error: unknown file type"); exit(i); break;		
 		case 7: fprintf( stderr, "Error: expect additional option at the end"); exit(i); break;
-		case 8: fprintf( stderr, "Error"); exit(i); break;
+		case 8: fprintf( stderr, "Error: Cannt Open directory"); exit(i); break;
 		case 9: fprintf( stderr, "Error"); exit(i); break;		
 		default: printf("Another Error"); exit(i); break;
 	}
@@ -160,36 +138,53 @@ void errorMsg(int i){
 
 
 void do_dir(const char * dir_name,  char * parms[]){
-	
+	DIR *directory = opendir(dir_name);
+	if (directory == NULL) errorMsg(8);
+	struct dirent *direntry; ;
+	while((direntry = readdir(directory))){
+		char newFile[100024];
+		
+		if( strcmp(direntry->d_name,".") == 0 ) continue;
+		if( strcmp(direntry->d_name,"..") == 0 ) continue;
+		
+		strcpy(newFile, dir_name);
+		strcat(newFile, "/");
+		strcat(newFile, direntry->d_name);
+		do_file(newFile,parms);
+
+	}
 }
-
-
 
 void do_file(char * dir_name,  char *parms[]){
 
 	int print = 1;
 	int smthPrinted = 0;
 	int currentParam = 0;
+	int cParam = 0;
 	struct stat newStatBuffer;
 	char *fileName = basename(dir_name);
 	lstat(dir_name, &newStatBuffer);
 	
-	if(parms[currentParam] != NULL  && print == 1){
-
+	while(parms[currentParam] != NULL  && print == 1){
+		cParam = 0;
 		if( strcmp(parms[currentParam],"-user") == 0){
 			uid_t userid = getUidFromString(parms[currentParam + 1]);
 			if(newStatBuffer.st_uid != userid)	print = 0;
+			cParam += 2;
 		}
 		
 		if( strcmp(parms[currentParam],"-nouser") == 0){
 			if(getpwuid(newStatBuffer.st_uid) != NULL ) print = 0;
+			cParam += 1;
 		}			
 		
 		if( strcmp(parms[currentParam],"-name") == 0){
 			if(fnmatch(parms[currentParam + 1], fileName, 0) != 0) print = 0;
+			cParam += 2;
 		}
 		if( strcmp(parms[currentParam],"-path") == 0){
 			if(fnmatch(parms[currentParam + 1], dir_name, 0) != 0) print = 0;
+			cParam += 2;
 		}
 		
 		if( strcmp(parms[currentParam],"-type") == 0){
@@ -204,25 +199,34 @@ void do_file(char * dir_name,  char *parms[]){
 			if(S_ISSOCK(newStatBuffer.st_mode)) currFileType = 's';
 		
 			if(currFileType != parms[currentParam + 1][0]) print = 0;
+			cParam += 2;
 		}
 		
 		if( strcmp(parms[currentParam],"-print") == 0){
 			printf("%s\n",dir_name);
 			smthPrinted = 1;
+			cParam += 1;
 		}		
 		
 		if( strcmp(parms[currentParam],"-ls") == 0){
 			lsprint(dir_name);
 			smthPrinted = 1;
+			cParam += 1;
 		}
+		
+		currentParam += cParam;
 	}
 
 	if(print == 1 && smthPrinted == 0) {
 		printf("%s\n",dir_name);
 	}
+	
+	if(S_ISDIR(newStatBuffer.st_mode)){
+		do_dir(dir_name, parms);	
+	}
+	
 
 }
-
 
 
 int in_array ( char *needle , char *haystack[], int arraySize){
@@ -258,8 +262,6 @@ struct optionItem *searchOption(char* optName){
 
 }
 
-
-
 int isValidOption(char *chkOption){
 
 	struct optionItem *optItem = searchOption(chkOption);
@@ -285,7 +287,6 @@ uid_t getUidFromString(char *id){
 	}
 	return 0;
 }
-
 
 void lsprint(char* path){
 	
