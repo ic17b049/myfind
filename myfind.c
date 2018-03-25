@@ -114,19 +114,19 @@ int main(int argc, char* argv[])
 }
 
 void errorMsg(int i){
-	
-	for(i=0;cmdLine[i]!=NULL;i++){
+	/*
+	for(i=0;cmdLine[i]<1;i++){
 		fprintf( stderr, "%s ",cmdLine[i]);	
 	}
-
-	
+*/
+	fprintf( stderr, "%s: ",cmdLine[0]);	
 	
 	switch(i) {
 		case 1: fprintf( stderr, "Error: Can not open directory"); exit(i); break;
 		case 2: fprintf( stderr, "Error: expect parameter"); exit(i); break;
 		case 3: fprintf( stderr, "Error: unknown option"); exit(i); break;
 		case 4: fprintf( stderr, "Error: Expect Option"); exit(i); break;
-		case 5: fprintf( stderr, "Error: unknown User"); exit(i); break;
+		case 5: fprintf( stderr, "Error: unknown User\n"); exit(i); break;
 		case 6: fprintf( stderr, "Error: unknown file type"); exit(i); break;		
 		case 7: fprintf( stderr, "Error: expect additional option at the end"); exit(i); break;
 		case 8: fprintf( stderr, "Error: Cannt Open directory"); exit(i); break;
@@ -274,17 +274,15 @@ uid_t getUidFromString(char *id){
 	struct passwd *userinfo;
 	
 	userinfo = getpwnam(id);
-	if(userinfo != NULL){
-		return userinfo->pw_uid;
-	}
-
+	
+	if(userinfo != NULL)	return userinfo->pw_uid;
 	if(isdigit(id[0]) == 0) return 0;
 	
 	long int userid = strtol(id, NULL, 10);
 	userinfo =  getpwuid(userid);
-	if(userinfo != NULL){
-		return userinfo->pw_uid;;
-	}
+	
+	if(userinfo != NULL)	return userinfo->pw_uid;
+	
 	return 0;
 }
 
