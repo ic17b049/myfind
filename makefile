@@ -10,7 +10,7 @@
 ##
 ## @version 1.0
 ##
-## @todo Abklären .phony nötig, doc und danach folgende Punkte mit Tommy abklären
+## @todo Abklären .phony nötig
 ##
 ## ------------------------------------------------------------- variables --
 ##
@@ -49,22 +49,22 @@ clean:
 distclean: clean
 	$(RM) -r doc
 
-## doc: html pdf
+ doc: html pdf
 
-##html:
-##	$(DOXYGEN) doxygen.dcf
-##
-##pdf: html
-##	$(CD) doc/pdf && \
-##	$(MV) refman.tex refman_save.tex && \
-##	$(GREP) -v $(EXCLUDE_PATTERN) refman_save.tex > refman.tex && \
-##	$(RM) refman_save.tex && \
-##	make && \
-##	$(MV) refman.pdf refman.save && \
-##	$(RM) *.pdf *.html *.tex *.aux *.sty *.log *.eps *.out *.ind *.idx \
-##	      *.ilg *.toc *.tps Makefile && \
-##	$(MV) refman.save refman.pdf
-##
+html:
+	$(DOXYGEN) Doxyfile.dcf
+
+pdf: html
+	$(CD) doc/pdf && \
+	$(MV) refman.tex refman_save.tex && \
+	$(GREP) -v $(EXCLUDE_PATTERN) refman_save.tex > refman.tex && \
+	$(RM) refman_save.tex && \
+	make && \
+	$(MV) refman.pdf refman.save && \
+	$(RM) *.pdf *.html *.tex *.aux *.sty *.log *.eps *.out *.ind *.idx \
+	      *.ilg *.toc *.tps Makefile && \
+	$(MV) refman.save refman.pdf
+
 ##
 ## ---------------------------------------------------------- dependencies --
 ##

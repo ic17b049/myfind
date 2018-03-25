@@ -1,5 +1,17 @@
 //why the user 160 exists??? first char shouldn't be a number
 //test-find.sh row 491 User hugo do not exist;
+//*
+// @file myfind.c
+// Betriebssysteme My Find File
+// Beispiel 1
+//
+// @author Dominic Schebeck, Dominik Marcel Rychly, Thomas Neugschwandtner
+// @date 03/13/2018
+//
+// @version 1.0
+//
+
+// ------------------------------------------------------includes----------
 
 #include <stdio.h>
 #include <string.h>
@@ -50,8 +62,17 @@ char **cmdLine;
 void lsprint(char* path);
 void spclPrint(char *str);
 
-
-
+//*
+// \brief The MyFind C program
+//
+//This is the main entry point for any C program
+//
+// \param argc the number of arguments
+// \param argv the arguments itselves (including the program name in argv[0])
+//
+// \return always "success"
+// \retval 0 always
+//
 int main(int argc, char* argv[])
 {	
 	cmdLine = argv;
@@ -385,3 +406,4 @@ void spclPrint(char *str){
 	
 }
 
+// End:
