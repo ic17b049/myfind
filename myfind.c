@@ -135,24 +135,20 @@ int main(int argc, char* argv[])
 }
 
 void errorMsg(int i){
-	/*
-	for(i=0;cmdLine[i]<1;i++){
-		fprintf( stderr, "%s ",cmdLine[i]);	
-	}
-*/
+
 	fprintf( stderr, "%s: ",cmdLine[0]);	
 	
 	switch(i) {
-		case 1: fprintf( stderr, "Error: Can not open directory"); exit(i); break;
-		case 2: fprintf( stderr, "Error: expect parameter"); exit(i); break;
-		case 3: fprintf( stderr, "Error: unknown option"); exit(i); break;
-		case 4: fprintf( stderr, "Error: Expect Option"); exit(i); break;
+		case 1: fprintf( stderr, "Error: Can not open directory\n"); exit(i); break;
+		case 2: fprintf( stderr, "Error: expect parameter\n"); exit(i); break;
+		case 3: fprintf( stderr, "Error: unknown option\n"); exit(i); break;
+		case 4: fprintf( stderr, "Error: Expect Option\n"); exit(i); break;
 		case 5: fprintf( stderr, "Error: unknown User\n"); exit(i); break;
-		case 6: fprintf( stderr, "Error: unknown file type"); exit(i); break;		
-		case 7: fprintf( stderr, "Error: expect additional option at the end"); exit(i); break;
-		case 8: fprintf( stderr, "Error: Cannt Open directory"); exit(i); break;
-		case 9: fprintf( stderr, "Error"); exit(i); break;		
-		default: printf("Another Error"); exit(i); break;
+		case 6: fprintf( stderr, "Error: unknown file type\n"); exit(i); break;		
+		case 7: fprintf( stderr, "Error: expect additional option at the end\n"); exit(i); break;
+		case 8: fprintf( stderr, "Error: Cannt Open directory\n"); exit(i); break;
+		case 9: fprintf( stderr, "Error\n"); exit(i); break;		
+		default: printf("Another Error\n"); exit(i); break;
 	}
 }
 
@@ -163,7 +159,11 @@ void do_dir(const char * dir_name,  char * parms[]){
 	if (directory == NULL) errorMsg(8);
 	struct dirent *direntry; ;
 	while((direntry = readdir(directory))){
-		char newFile[100024];
+		//char newFile[10024] = {'\0'};
+		
+		size_t newFileLen = strlen(dir_name)+ 1 +strlen(direntry->d_name) + 1 ;
+
+		char *newFile = (char *) malloc(newFileLen * sizeof(char));
 		
 		if( strcmp(direntry->d_name,".") == 0 ) continue;
 		if( strcmp(direntry->d_name,"..") == 0 ) continue;
@@ -172,7 +172,8 @@ void do_dir(const char * dir_name,  char * parms[]){
 		strcat(newFile, "/");
 		strcat(newFile, direntry->d_name);
 		do_file(newFile,parms);
-
+		
+		free(newFile);
 	}
 }
 
@@ -308,19 +309,32 @@ uid_t getUidFromString(char *id){
 }
 
 void lsprint(char* path){
-	
-	
-	//char path[] = "/home/ic17b049/myfind/.git/branches";
 	struct stat buf;
 	int statRes = lstat(path, &buf);
 	
 	struct passwd *userInfo;
 	struct group *groupInfo;
 	
+	char *linkname;
+	ssize_t r;
+	
 	if(statRes != 0){
 		printf("ERROR lstat");
 		exit(1);
 	}
+	
+	
+	// File type
+	char fileType = '?';
+	if(S_ISREG(buf.st_mode)) fileType = '-';
+	else if(S_ISDIR(buf.st_mode)) fileType = 'd';
+	else if(S_ISBLK(buf.st_mode)) fileType = 'b';
+	else if(S_ISCHR(buf.st_mode)) fileType = 'c';
+	else if(S_ISFIFO(buf.st_mode)) fileType = 'p';
+	else if(S_ISLNK(buf.st_mode)) fileType = 'l';
+	else if(S_ISSOCK(buf.st_mode)) fileType = 's';
+	
+	
 	
 	// Inode
 	printf("%6lu ",buf.st_ino); 
@@ -330,33 +344,40 @@ void lsprint(char* path){
 	//
 	
 	printf("%3lu", buf.st_blocks/2);
-	printf(" ");
-	// File type
-	char fileType = '?';
-	if(S_ISREG(buf.st_mode)) fileType = '-';
-	else if(S_ISDIR(buf.st_mode)) fileType = 'd';
-	else if(S_ISBLK(buf.st_mode)) fileType = 'b';
-	else if(S_ISCHR(buf.st_mode)) fileType = 'c';
-	else if(S_ISFIFO(buf.st_mode)) fileType = 'p';
-	else if(S_ISLNK(buf.st_mode)) fileType = 'l';
 
-	
+	printf(" ");
+
 	printf("%c", fileType);
 	
 	// Permision
 	
 	printf("%c", (buf.st_mode & S_IRUSR)? 'r' : '-');
 	printf("%c", (buf.st_mode & S_IWUSR)? 'w' : '-');
-	printf("%c", (buf.st_mode & S_IXUSR)? 'x' : '-');
-
+	printf("%c", 
+             (buf.st_mode & S_ISUID) ? 
+				(buf.st_mode & S_IXUSR) ? 's' : 'S':
+				(buf.st_mode & S_IXUSR) ? 'x' : '-'
+	);
+			
+	
 	printf("%c", (buf.st_mode & S_IRGRP)? 'r' : '-');
-	printf("%c", (buf.st_mode & S_IWGRP)? 'w' : '-');
-	printf("%c", (buf.st_mode & S_IXGRP)? 'x' : '-');
+	printf("%c", (buf.st_mode & S_IWGRP)? 'w' : '-');	
+	printf("%c", 
+             (buf.st_mode & S_ISGID) ?
+				(buf.st_mode & S_IXGRP) ? 's' : 'S':
+				(buf.st_mode & S_IXGRP) ? 'x' : '-'
+	);	
 
 	printf("%c", (buf.st_mode & S_IROTH)? 'r' : '-');
 	printf("%c", (buf.st_mode & S_IWOTH)? 'w' : '-');
-	printf("%c", (buf.st_mode & S_IXOTH)? 'x' : '-');	
 	
+	
+	printf("%c", 
+             (buf.st_mode & S_ISVTX) ?
+				(buf.st_mode & S_IXOTH) ? 't' : 'T':
+				(buf.st_mode & S_IXOTH) ? 'x' : '-'
+	);	
+
 	printf(" ");	
 	
 	//Hardlinks
@@ -381,7 +402,14 @@ void lsprint(char* path){
 	printf(" ");		
 	
 	// Size in Bytes
-	printf("%8lu",buf.st_size); 
+	
+	if(fileType == 'b' || fileType == 'c'){
+		printf("        ");
+	}else{
+		printf("%8lu",buf.st_size); 
+	}
+	
+	
 	printf(" ");	
 
 	// Time
@@ -394,12 +422,26 @@ void lsprint(char* path){
 	//Path
 	//printf("%s",path);
 	spclPrint(path);
+	
+	
+	//symlink print 
+	if(fileType == 'l'){
+		printf(" -> ");
+		
+		
+		linkname = malloc(buf.st_size + 1);
+		r = readlink(path, linkname, buf.st_size + 1);
+		linkname[r] = '\0';
+		printf("%s",linkname);
+	}
+
 	printf("\n");
 }
 
 void spclPrint(char *str){
 	while(*str != '\0'){
 		if(*str == '\\') printf("\\\\");
+		else if(*str == ' ') printf("\\ ");
 		else printf("%c",*str);
 		str++;
 	}
