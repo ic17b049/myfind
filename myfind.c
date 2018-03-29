@@ -5,7 +5,10 @@
 // Betriebssysteme My Find File
 // Beispiel 1
 //
-// @author Dominic Schebeck, Dominik Marcel Rychly, Thomas Neugschwandtner
+// @author Dominic Schebeck
+// @author Dominik Marcel Rychly
+// @author Thomas Neugschwandtner
+//
 // @date 03/13/2018
 //
 // @version 1.0
@@ -65,7 +68,7 @@ void spclPrint(char *str);
 //*
 // \brief The MyFind C program
 //
-//This is the main entry point for any C program
+// This is the main entry point for any C program
 //
 // \param argc the number of arguments
 // \param argv the arguments itselves (including the program name in argv[0])
@@ -134,6 +137,12 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+//*
+// \brief prints error massages
+//
+// \param i -> error case
+//
+
 void errorMsg(int i){
 
 	fprintf( stderr, "%s: ",cmdLine[0]);	
@@ -152,7 +161,12 @@ void errorMsg(int i){
 	}
 }
 
-
+//*
+// \brief calls do_file for every child of directory
+//
+// \param dir_name full path of directory
+// \param parms filter and print parameter
+//
 
 void do_dir(const char * dir_name,  char * parms[]){
 	DIR *directory = opendir(dir_name);
@@ -176,6 +190,15 @@ void do_dir(const char * dir_name,  char * parms[]){
 		free(newFile);
 	}
 }
+
+//*
+// \brief prints file if every filter matches 
+//		  returns as soon as one filter does not match and
+//		  additionally calls do_file if file is a directory
+//
+// \param dir_name full path of directory
+// \param parms filter and print parameter
+// 
 
 void do_file(char * dir_name,  char *parms[]){
 
@@ -250,6 +273,7 @@ void do_file(char * dir_name,  char *parms[]){
 
 }
 
+//############## hätten wir gestrichen?!?!??!?!?!?!
 
 int in_array ( char *needle , char *haystack[], int arraySize){
 	int inArray = 0;
@@ -259,6 +283,16 @@ int in_array ( char *needle , char *haystack[], int arraySize){
 	}
 	return !inArray;
 }
+
+//*
+//\ brief check if option is supported
+//
+// \param option string
+//
+// \return if successful returns pointer to struct optionItem
+// \retval pointer to struct
+// \retval NULL
+//
 
 struct optionItem *searchOption(char* optName){
 	static struct optionItem optArray[] = {
@@ -284,6 +318,8 @@ struct optionItem *searchOption(char* optName){
 
 }
 
+// ###########hätten wir gestrichen?!?!?!
+
 int isValidOption(char *chkOption){
 
 	struct optionItem *optItem = searchOption(chkOption);
@@ -291,6 +327,16 @@ int isValidOption(char *chkOption){
 	
 	return 0;
 }
+
+//*
+// \brief get User-ID from string
+//
+// \param string contains name od id
+//
+// \return User-ID or 0
+// \retval uid
+// \retval 0
+//
 
 uid_t getUidFromString(char *id){
 	struct passwd *userinfo;
@@ -307,6 +353,12 @@ uid_t getUidFromString(char *id){
 	
 	return 0;
 }
+
+//*
+// \brief prints file in -dils style
+//
+// \param directory path
+//
 
 void lsprint(char* path){
 	struct stat buf;
@@ -438,6 +490,13 @@ void lsprint(char* path){
 	printf("\n");
 }
 
+//*
+// \brief prints the whole string and
+//		  escapes blanks and backslashes with backslash
+//
+// \param string to print
+//
+
 void spclPrint(char *str){
 	while(*str != '\0'){
 		if(*str == '\\') printf("\\\\");
@@ -448,4 +507,4 @@ void spclPrint(char *str){
 	
 }
 
-// End:
+//------------------------------------eof--------------------------------------------------
