@@ -34,7 +34,7 @@ VERBOSE=0
 FORCE=0
 RV=0
 
-readonly SIMPLEDIR="/var/tmp/test-find/simple"
+readonly SIMPLEDIR="/var/tmp/test-find/full"
 readonly   FULLDIR="/var/tmp/test-find/full"
 
 readonly        CORRECT_STDOUT=`mktemp --tmpdir        "known-correct-find-stdout.XXXXXXXXXX"`

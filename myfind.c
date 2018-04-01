@@ -1,5 +1,3 @@
-//why the user 160 exists??? first char shouldn't be a number
-//test-find.sh row 491 User hugo do not exist;
 /**
 * @file myfind.c
 * Betriebssysteme My Find File
@@ -32,40 +30,21 @@
 #include <ctype.h>
 #include <grp.h>
 #include <time.h>
+#include <err.h>
 
 struct optionItem {
 	char *name;
 	int params;
 };
 
-char *option[] = {
-		"-user",
-		"-name",
-		"-type",
-		"-print",
-		"-ls",
-		"-nouser",
-		"-path"
-	
-		//"-group",
-		//"-nogroup"
-	};
+static void do_dir(const char const * dir_name,  char ** parms);
+static void do_file(char * dir_name,  char ** parms);
 
-
-void errorMsg(int i);
-void do_dir(const char * dir_name,  char * parms[]);
-uid_t getUidFromString(char *id);
-
-
-int isValidOption(char *option);
-int in_array ( char *needle , char *haystack[], int arraySize);
-struct optionItem *searchOption(char* optName);
-
-void do_file(char * dir_name,  char * parms[]);
-
-char **cmdLine;
-void lsprint(char* path);
-void spclPrint(char *str);
+static uid_t getUidFromString(const char const *id);
+static struct optionItem *searchOption(const char const *optName);
+static void errorMsg(const int i);
+static void lsprint(const char const *path);
+static void spclPrint(const char const *str);
 
 /**
 * \brief The MyFind C program
@@ -79,11 +58,8 @@ void spclPrint(char *str);
 * \retval 0 always
 */
 
-int main(int argc, char* argv[])
+int main(const int argc, char *argv[])
 {	
-	cmdLine = argv;
-
-
 	int expParam = 0;	
 	struct optionItem *optItem = NULL;
 	int optionPos = 0;
@@ -131,12 +107,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if(expParam > 0) errorMsg(7);;  // expect additional option at the end;
-	
-
+	if(expParam > 0) errorMsg(7);  // expect additional option at the end;
 	do_file(argv[1], &argv[2]);	
-	
-	
 	return 0;
 }
 
@@ -146,21 +118,19 @@ int main(int argc, char* argv[])
 * \param i -> error case
 */
 
-void errorMsg(int i){
-
-	fprintf( stderr, "%s: ",cmdLine[0]);	
+static void errorMsg(const int i){
 	
 	switch(i) {
-		case 1: fprintf( stderr, "Error: Can not open directory\n"); exit(i); break;
-		case 2: fprintf( stderr, "Error: expect parameter\n"); exit(i); break;
-		case 3: fprintf( stderr, "Error: unknown option\n"); exit(i); break;
-		case 4: fprintf( stderr, "Error: Expect Option\n"); exit(i); break;
-		case 5: fprintf( stderr, "Error: unknown User\n"); exit(i); break;
-		case 6: fprintf( stderr, "Error: unknown file type\n"); exit(i); break;		
-		case 7: fprintf( stderr, "Error: expect additional option at the end\n"); exit(i); break;
-		case 8: fprintf( stderr, "Error: Cannt Open directory\n"); exit(i); break;
-		case 9: fprintf( stderr, "Error\n"); exit(i); break;		
-		default: printf("Another Error\n"); exit(i); break;
+		case 1: errx(1, "can not open directory"); break;
+		case 2: errx(2, "expect parameter"); break;
+		case 3: errx(3, "unknown option"); break;
+		case 4: errx(4, "expect option"); break;
+		case 5: errx(5, "unknown User"); break;
+		case 6: errx(6, "unknown file type"); break;		
+		case 7: errx(7, "expect additional option at the end");  break;
+		case 8: errx(8, "Error"); break;
+		case 9: errx(9, "Error"); break;		
+		default: errx(999, "Another Error\n"); break;
 	}
 }
 
@@ -171,16 +141,14 @@ void errorMsg(int i){
 * \param parms filter and print parameter
 */
 
-void do_dir(const char * dir_name,  char * parms[]){
+static void do_dir(const char const *dir_name,  char ** parms){
 	DIR *directory = opendir(dir_name);
 	if (directory == NULL) errorMsg(8);
 	struct dirent *direntry; ;
 	while((direntry = readdir(directory))){
-		//char newFile[10024] = {'\0'};
 		
 		size_t newFileLen = strlen(dir_name)+ 1 +strlen(direntry->d_name) + 1 ;
-
-		char *newFile = (char *) malloc(newFileLen * sizeof(char));
+		char newFile[newFileLen * sizeof(char)];
 		
 		if( strcmp(direntry->d_name,".") == 0 ) continue;
 		if( strcmp(direntry->d_name,"..") == 0 ) continue;
@@ -189,8 +157,7 @@ void do_dir(const char * dir_name,  char * parms[]){
 		strcat(newFile, "/");
 		strcat(newFile, direntry->d_name);
 		do_file(newFile,parms);
-		
-		free(newFile);
+
 	}
 }
 
@@ -203,7 +170,7 @@ void do_dir(const char * dir_name,  char * parms[]){
 * \param parms filter and print parameter
 */ 
 
-void do_file(char * dir_name,  char *parms[]){
+static void do_file(char * dir_name,  char **parms){
 
 	int print = 1;
 	int smthPrinted = 0;
@@ -276,17 +243,6 @@ void do_file(char * dir_name,  char *parms[]){
 
 }
 
-//############## hätten wir gestrichen?!?!??!?!?!?!
-
-int in_array ( char *needle , char *haystack[], int arraySize){
-	int inArray = 0;
-	for(int i = 0; i<arraySize; i++){
-		int cmpVal = strcmp(haystack[i],needle);
-		if(cmpVal == 0) inArray = 1;
-	}
-	return !inArray;
-}
-
 /**
 *\ brief check if option is supported
 *
@@ -297,7 +253,7 @@ int in_array ( char *needle , char *haystack[], int arraySize){
 * \retval NULL
 */
 
-struct optionItem *searchOption(char* optName){
+static struct optionItem *searchOption(const char const *optName){
 	static struct optionItem optArray[] = {
 		{.name="-user",.params=1},
 		{.name="-name",.params=1},
@@ -305,10 +261,7 @@ struct optionItem *searchOption(char* optName){
 		{.name="-print",.params=0},
 		{.name="-ls",.params=0},
 		{.name="-nouser",.params=0},
-		{.name="-path",.params=1},
-		//only for groups with 4 Persons
-		//{.name="-group",.minParams=1,.maxParams=1),
-		//{.name="-nogroup",.minParams=1,.maxParams=1)
+		{.name="-path",.params=1}
 	};
 	
 	int optionItemLen = (sizeof(optArray)/sizeof(optArray[0]));
@@ -318,17 +271,6 @@ struct optionItem *searchOption(char* optName){
 	}
 	
 	return NULL;
-
-}
-
-// ###########hätten wir gestrichen?!?!?!
-
-int isValidOption(char *chkOption){
-
-	struct optionItem *optItem = searchOption(chkOption);
-	if(optItem != NULL)	return 1;
-	
-	return 0;
 }
 
 /**
@@ -341,7 +283,7 @@ int isValidOption(char *chkOption){
 * \retval 0
 */
 
-uid_t getUidFromString(char *id){
+static uid_t getUidFromString(const char const *id){
 	struct passwd *userinfo;
 	
 	userinfo = getpwnam(id);
@@ -363,16 +305,13 @@ uid_t getUidFromString(char *id){
 * \param directory path
 */
 
-void lsprint(char* path){
+static void lsprint(const char const *path){
 	struct stat buf;
 	int statRes = lstat(path, &buf);
 	
 	struct passwd *userInfo;
 	struct group *groupInfo;
-	
-	char *linkname;
-	ssize_t r;
-	
+
 	if(statRes != 0){
 		printf("ERROR lstat");
 		exit(1);
@@ -444,9 +383,7 @@ void lsprint(char* path){
 	//Username
 	
 	userInfo =  getpwuid(buf.st_uid);
-	
-	
-	
+
 	printf("%-8s", (userInfo!=NULL) ? userInfo->pw_name : "999999");		
 	printf(" ");		
 
@@ -474,22 +411,22 @@ void lsprint(char* path){
 	strftime(buff, 20, "%b %e %H:%M", localtime(&time));
 	printf("%s",buff);
 	printf(" ");
+	
 	//Path
-	//printf("%s",path);
+	
 	spclPrint(path);
 	
 	
 	//symlink print 
+	
 	if(fileType == 'l'){
-		printf(" -> ");
-		
-		
-		linkname = malloc(buf.st_size + 1);
-		r = readlink(path, linkname, buf.st_size + 1);
+		char linkname[buf.st_size + 1];
+		ssize_t r = readlink(path, linkname, buf.st_size + 1);
 		linkname[r] = '\0';
-		printf("%s",linkname);
+		
+		printf(" -> %s",linkname);
 	}
-
+	
 	printf("\n");
 }
 
@@ -500,7 +437,7 @@ void lsprint(char* path){
 * \param string to print
 */
 
-void spclPrint(char *str){
+static void spclPrint(const char const *str){
 	while(*str != '\0'){
 		if(*str == '\\') printf("\\\\");
 		else if(*str == ' ') printf("\\ ");
