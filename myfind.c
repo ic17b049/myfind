@@ -1,20 +1,22 @@
 //why the user 160 exists??? first char shouldn't be a number
 //test-find.sh row 491 User hugo do not exist;
-//*
-// @file myfind.c
-// Betriebssysteme My Find File
-// Beispiel 1
-//
-// @author Dominic Schebeck
-// @author Dominik Marcel Rychly
-// @author Thomas Neugschwandtner
-//
-// @date 03/13/2018
-//
-// @version 1.0
-//
+/**
+* @file myfind.c
+* Betriebssysteme My Find File
+* Beispiel 1
+*
+* @author Dominic Schebeck
+* @author Dominik Marcel Rychly
+* @author Thomas Neugschwandtner
+*
+* @date 03/13/2018
+*
+* @version 1.0
+*/
 
-// ------------------------------------------------------includes----------
+/*
+* ------------------------------------------------------includes----------
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -65,17 +67,18 @@ char **cmdLine;
 void lsprint(char* path);
 void spclPrint(char *str);
 
-//*
-// \brief The MyFind C program
-//
-// This is the main entry point for any C program
-//
-// \param argc the number of arguments
-// \param argv the arguments itselves (including the program name in argv[0])
-//
-// \return always "success"
-// \retval 0 always
-//
+/**
+* \brief The MyFind C program
+*
+* This is the main entry point for any C program
+*
+* \param argc the number of arguments
+* \param argv the arguments itselves (including the program name in argv[0])
+*
+* \return always "success"
+* \retval 0 always
+*/
+
 int main(int argc, char* argv[])
 {	
 	cmdLine = argv;
@@ -137,11 +140,11 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-//*
-// \brief prints error massages
-//
-// \param i -> error case
-//
+/**
+* \brief prints error massages
+*
+* \param i -> error case
+*/
 
 void errorMsg(int i){
 
@@ -161,12 +164,12 @@ void errorMsg(int i){
 	}
 }
 
-//*
-// \brief calls do_file for every child of directory
-//
-// \param dir_name full path of directory
-// \param parms filter and print parameter
-//
+/**
+* \brief calls do_file for every child of directory
+*
+* \param dir_name full path of directory
+* \param parms filter and print parameter
+*/
 
 void do_dir(const char * dir_name,  char * parms[]){
 	DIR *directory = opendir(dir_name);
@@ -191,14 +194,14 @@ void do_dir(const char * dir_name,  char * parms[]){
 	}
 }
 
-//*
-// \brief prints file if every filter matches 
-//		  returns as soon as one filter does not match and
-//		  additionally calls do_file if file is a directory
-//
-// \param dir_name full path of directory
-// \param parms filter and print parameter
-// 
+/**
+* \brief prints file if every filter matches 
+*		  returns as soon as one filter does not match and
+*		  additionally calls do_file if file is a directory
+*
+* \param dir_name full path of directory
+* \param parms filter and print parameter
+*/ 
 
 void do_file(char * dir_name,  char *parms[]){
 
@@ -284,15 +287,15 @@ int in_array ( char *needle , char *haystack[], int arraySize){
 	return !inArray;
 }
 
-//*
-//\ brief check if option is supported
-//
-// \param option string
-//
-// \return if successful returns pointer to struct optionItem
-// \retval pointer to struct
-// \retval NULL
-//
+/**
+*\ brief check if option is supported
+*
+* \param option string
+*
+* \return if successful returns pointer to struct optionItem
+* \retval pointer to struct
+* \retval NULL
+*/
 
 struct optionItem *searchOption(char* optName){
 	static struct optionItem optArray[] = {
@@ -328,15 +331,15 @@ int isValidOption(char *chkOption){
 	return 0;
 }
 
-//*
-// \brief get User-ID from string
-//
-// \param string contains name od id
-//
-// \return User-ID or 0
-// \retval uid
-// \retval 0
-//
+/**
+* \brief get User-ID from string
+*
+* \param string contains name od id
+*
+* \return User-ID or 0
+* \retval uid
+* \retval 0
+*/
 
 uid_t getUidFromString(char *id){
 	struct passwd *userinfo;
@@ -354,11 +357,11 @@ uid_t getUidFromString(char *id){
 	return 0;
 }
 
-//*
-// \brief prints file in -dils style
-//
-// \param directory path
-//
+/**
+* \brief prints file in -dils style
+*
+* \param directory path
+*/
 
 void lsprint(char* path){
 	struct stat buf;
@@ -490,12 +493,12 @@ void lsprint(char* path){
 	printf("\n");
 }
 
-//*
-// \brief prints the whole string and
-//		  escapes blanks and backslashes with backslash
-//
-// \param string to print
-//
+/**
+* \brief prints the whole string and
+*		  escapes blanks and backslashes with backslash
+*
+* \param string to print
+*/
 
 void spclPrint(char *str){
 	while(*str != '\0'){
