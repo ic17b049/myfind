@@ -31,6 +31,7 @@
 #include <grp.h>
 #include <time.h>
 #include <err.h>
+#include <errno.h>
 
 struct optionItem {
 	char *name;
@@ -43,8 +44,30 @@ static void do_file(char * dir_name,  char ** parms);
 static uid_t getUidFromString(const char const *id);
 static struct optionItem *searchOption(const char const *optName);
 static void errorMsg(const int i);
+static void warnMsg(const int i);
 static void lsprint(const char const *path);
 static void spclPrint(const char const *str);
+
+//error/warn enum
+enum {	ExpParam,
+		ExpOpt,
+		ExpOptAdditOpt,
+		UnknwnOpt,
+		UnknwnUser,
+		UnknwnFileType,
+		CantOpenDir,
+		Closedir_Error,
+		LSTAT_Error,
+		GetPwUID_Error,
+		StrToL_Error,
+		GetGrpID_Error,
+		StrFTime_Error,
+		Localtime_Error,
+		Readlink_Error,
+		GetPwNam_Error,
+		Readdir_Error,
+		SmthgWrdHpnd
+	 };
 
 /**
 * \brief The MyFind C program
@@ -75,17 +98,17 @@ int main(const int argc, char *argv[])
 				//expect Option/Parameter
 				if(argv[i][0] == '-'){
 					//Option
-					if(expParam > 0) errorMsg(2); // expect Parameter
+					if(expParam > 0) errorMsg(ExpParam);
 					
 					optItem = searchOption(argv[i]);
-					if(optItem == NULL) errorMsg(3); // unknown Option
+					if(optItem == NULL) errorMsg(UnknwnOpt);
 					
 					optionPos = i; // Store Option Position
 					expParam = optItem->params;
 					
 				}else{
 					//Parameter
-					if(expParam == 0) errorMsg(4); // Expect Option
+					if(expParam == 0) errorMsg(ExpOpt);
 					expParam--;
 			
 				}
@@ -94,19 +117,19 @@ int main(const int argc, char *argv[])
 
 		if(optItem != NULL && optionPos != 0 && expParam == 0){
 			if(strcmp(optItem->name,"-user") == 0){
-				if(getUidFromString(argv[( optionPos + 1 )]) == 0) errorMsg(5);  // unknown User
+				if(getUidFromString(argv[( optionPos + 1 )]) == 0) errorMsg(UnknwnUser);
 			}
 			
 			if(strcmp(optItem->name,"-type") == 0){
 				char allowedFileTypes[] = "fdbcpls";
 				char *validType = memchr(allowedFileTypes, argv[( optionPos + 1 )][0], strlen(allowedFileTypes));
 				
-				if(validType == NULL) errorMsg(6);  // unknown file type
+				if(validType == NULL) errorMsg(UnknwnFileType);
 			}
 		}
 	}
 	
-	if(expParam > 0) errorMsg(7);  // expect additional option at the end;
+	if(expParam > 0) errorMsg(ExpOptAdditOpt);
 	do_file(argv[1], &argv[2]);	
 	return 0;
 }
@@ -118,19 +141,73 @@ int main(const int argc, char *argv[])
 */
 
 static void errorMsg(const int i){
+
 	
-	switch(i) {
-		case 1: errx(1, "can not open directory"); break;
-		case 2: errx(2, "expect parameter"); break;
-		case 3: errx(3, "unknown option"); break;
-		case 4: errx(4, "expect option"); break;
-		case 5: errx(5, "unknown User"); break;
-		case 6: errx(6, "unknown file type"); break;		
-		case 7: errx(7, "expect additional option at the end");  break;
-		case 8: errx(8, "Error"); break;
-		case 9: errx(9, "Error"); break;		
-		default: errx(999, "Another Error\n"); break;
+	if(errno != 0){
+		errx(errno, strerror(errno));
+	}else{
+
+		switch(i) {
+			
+			case ExpParam:			errx(99, "Parameter is missing"); break;
+			case ExpOpt:			errx(99, "Option is missing"); break;
+			case ExpOptAdditOpt:	errx(99, "Option is missing"); break;
+			case UnknwnOpt:			errx(99, "Unknown option"); break;
+			case UnknwnUser:		errx(99, "Unknown user"); break;
+			case UnknwnFileType:	errx(99, "Unknown file-type"); break;
+			case CantOpenDir:		errx(99, "Can not open directory"); break;
+			case Closedir_Error:	errx(99, "Can not close directory"); break;
+			case LSTAT_Error:		errx(99, "LSTAT Error"); break;
+			case GetPwUID_Error:	errx(99, "GETPWUID Error"); break;
+			case StrToL_Error:		errx(99, "STRTOL Error"); break;
+			case GetGrpID_Error:	errx(99, "GETGRPID Error"); break;
+			case StrFTime_Error:	errx(99, "STRFTIME Error"); break;
+			case Localtime_Error:	errx(99, "LOCALTIME Error"); break;
+			case Readlink_Error:	errx(99, "READLINK Error"); break;
+			case GetPwNam_Error:	errx(99, "GETPWNAME Error"); break;
+			case Readdir_Error:		errx(99, "READDIR Error"); break;
+			default:				errx(999, "something weird happened"); break;
+		}
 	}
+}
+
+/**
+* \brief prints warn massages
+*
+* \param i -> error case
+*/
+
+static void warnMsg(const int i){
+	
+	if(errno != 0){
+		warn(strerror(errno));
+	}else{
+
+		switch(i) {
+			
+			case ExpParam:			warn("Parameter is missing"); break;
+			case ExpOpt:			warn("Option is missing"); break;
+			case ExpOptAdditOpt:	warn("Option is missing"); break;
+			case UnknwnOpt:			warn("Unknown option"); break;
+			case UnknwnUser:		warn("Unknown user"); break;
+			case UnknwnFileType:	warn("Unknown file-type"); break;
+			case CantOpenDir:		warn("Can not open directory"); break;
+			case Closedir_Error:	warn("Can not close directory"); break;
+			case LSTAT_Error:		warn("LSTAT Warn"); break;
+			case GetPwUID_Error:	warn("GETPWUID Warn"); break;
+			case StrToL_Error:		warn("STRTOL Warn"); break;
+			case GetGrpID_Error:	warn("GETGRPID Warn"); break;
+			case StrFTime_Error:	warn("STRFTIME Warn"); break;
+			case Localtime_Error:	warn("LOCALTIME Warn"); break;
+			case Readlink_Error:	warn("READLINK Warn"); break;
+			case GetPwNam_Error:	warn("GETPWNAME Warn"); break;
+			case Readdir_Error:		warn("READDIR Warn"); break;
+			default:				warn("something weird happened"); break;
+		}
+	}
+	
+	errno = 0;
+	
 }
 
 /**
@@ -141,23 +218,35 @@ static void errorMsg(const int i){
 */
 
 static void do_dir(const char const *dir_name,  char ** parms){
+	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);	
 	DIR *directory = opendir(dir_name);
-	if (directory == NULL) errorMsg(8);
-	struct dirent *direntry; ;
-	while((direntry = readdir(directory))){
+	if(directory == NULL){
+		warnMsg(CantOpenDir);
+		return;
+	}else{
+		struct dirent *direntry;
 		
-		size_t newFileLen = strlen(dir_name)+ 1 +strlen(direntry->d_name) + 1 ;
-		char newFile[newFileLen * sizeof(char)];
-		
-		if( strcmp(direntry->d_name,".") == 0 ) continue;
-		if( strcmp(direntry->d_name,"..") == 0 ) continue;
-		
-		strcpy(newFile, dir_name);
-		strcat(newFile, "/");
-		strcat(newFile, direntry->d_name);
-		do_file(newFile,parms);
+		if(errno != 0) errorMsg(SmthgWrdHpnd);
+		while((direntry = readdir(directory))){
+			
+			size_t newFileLen = strlen(dir_name)+ 1 +strlen(direntry->d_name) + 1 ;
+			char newFile[newFileLen * sizeof(char)];
+			
+			if( strcmp(direntry->d_name,".") == 0 ) continue;
+			if( strcmp(direntry->d_name,"..") == 0 ) continue;
+			
+			strcpy(newFile, dir_name);
+			strcat(newFile, "/");
+			strcat(newFile, direntry->d_name);
+			do_file(newFile,parms);
 
+		}
+		if(errno != 0) errorMsg(Readdir_Error);
 	}
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
+	int clRes = closedir(directory);
+	if(clRes == -1) errorMsg(Closedir_Error);
 }
 
 /**
@@ -174,13 +263,17 @@ static void do_file(char * dir_name,  char **parms){
 	int print = 1;
 	int smthPrinted = 0;
 	int currentParam = 0;
-	int cParam = 0;
 	struct stat newStatBuffer;
 	char *fileName = basename(dir_name);
-	lstat(dir_name, &newStatBuffer);
+	int lstatMsg = lstat(dir_name, &newStatBuffer);
+	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
+	if (lstatMsg == -1) errorMsg(LSTAT_Error);
+
 	
 	while(parms[currentParam] != NULL  && print == 1){
-		cParam = 0;
+		int cParam = 0;
+		
 		if( strcmp(parms[currentParam],"-user") == 0){
 			uid_t userid = getUidFromString(parms[currentParam + 1]);
 			if(newStatBuffer.st_uid != userid)	print = 0;
@@ -188,7 +281,9 @@ static void do_file(char * dir_name,  char **parms){
 		}
 		
 		if( strcmp(parms[currentParam],"-nouser") == 0){
+			if(errno != 0) errorMsg(SmthgWrdHpnd);
 			if(getpwuid(newStatBuffer.st_uid) != NULL ) print = 0;
+			else if(errno != 0) errorMsg(GetPwUID_Error);
 			cParam += 1;
 		}			
 		
@@ -211,7 +306,7 @@ static void do_file(char * dir_name,  char **parms){
 			if(S_ISFIFO(newStatBuffer.st_mode)) currFileType = 'p';
 			if(S_ISLNK(newStatBuffer.st_mode)) currFileType = 'l';
 			if(S_ISSOCK(newStatBuffer.st_mode)) currFileType = 's';
-		
+			
 			if(currFileType != parms[currentParam + 1][0]) print = 0;
 			cParam += 2;
 		}
@@ -285,13 +380,27 @@ static struct optionItem *searchOption(const char const *optName){
 static uid_t getUidFromString(const char const *id){
 	struct passwd *userinfo;
 	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	userinfo = getpwnam(id);
+	if(userinfo == NULL && errno != 0) errorMsg(GetPwNam_Error);
 	
 	if(userinfo != NULL)	return userinfo->pw_uid;
-	if(isdigit(id[0]) == 0) return 0;
 	
+	int tmpi = 0;
+	while(id[tmpi] != '\0'){
+		if(isdigit(id[tmpi]) == 0) return 0;
+		tmpi++;
+	}
+	
+	
+	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	long int userid = strtol(id, NULL, 10);
+	if(errno != 0) errorMsg(StrToL_Error);
+	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	userinfo =  getpwuid(userid);
+	if(userinfo == NULL && errno != 0) errorMsg(GetPwUID_Error);
 	
 	if(userinfo != NULL)	return userinfo->pw_uid;
 	
@@ -306,15 +415,14 @@ static uid_t getUidFromString(const char const *id){
 
 static void lsprint(const char const *path){
 	struct stat buf;
+	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	int statRes = lstat(path, &buf);
+	if(statRes == -1) errorMsg(LSTAT_Error);
 	
 	struct passwd *userInfo;
 	struct group *groupInfo;
 
-	if(statRes != 0){
-		printf("ERROR lstat");
-		exit(1);
-	}
 	
 	
 	// File type
@@ -380,15 +488,18 @@ static void lsprint(const char const *path){
 	
 	
 	//Username
-	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	userInfo =  getpwuid(buf.st_uid);
-
+	if(userInfo == NULL && errno != 0) errorMsg(GetPwUID_Error);
+	
 	printf("%-8s", (userInfo!=NULL) ? userInfo->pw_name : "999999");		
 	printf(" ");		
 
 	//Groupname
-
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	groupInfo = getgrgid(buf.st_gid);
+	if(groupInfo == NULL && errno != 0) errorMsg(GetGrpID_Error);
+	
 	printf("%-8s", groupInfo->gr_name);		
 	printf(" ");		
 	
@@ -407,7 +518,12 @@ static void lsprint(const char const *path){
 	
 	char buff[20];
 	time_t time = buf.st_mtime;
-	strftime(buff, 20, "%b %e %H:%M", localtime(&time));
+	struct tm *lcTime = localtime(&time);
+	if(lcTime == NULL) errorMsg(Localtime_Error);
+		
+	size_t strftRes = strftime(buff, 20, "%b %e %H:%M", lcTime);
+	if(strftRes == 0) errorMsg(StrFTime_Error);
+	
 	printf("%s",buff);
 	printf(" ");
 	
@@ -420,7 +536,11 @@ static void lsprint(const char const *path){
 	
 	if(fileType == 'l'){
 		char linkname[buf.st_size + 1];
+		
+		if(errno != 0) errorMsg(SmthgWrdHpnd);
 		ssize_t r = readlink(path, linkname, buf.st_size + 1);
+		if(r == -1) errorMsg(Readlink_Error);
+		
 		linkname[r] = '\0';
 		
 		printf(" -> %s",linkname);
