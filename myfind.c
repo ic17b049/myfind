@@ -48,8 +48,7 @@ static void spclPrint(const char const *str);
 
 /**
 * \brief The MyFind C program
-*
-* This is the main entry point for any C program
+*		 This is the main entry point for any C program
 *
 * \param argc the number of arguments
 * \param argv the arguments itselves (including the program name in argv[0])
@@ -244,7 +243,7 @@ static void do_file(char * dir_name,  char **parms){
 }
 
 /**
-*\ brief check if option is supported
+* \brief check if option is supported
 *
 * \param option string
 *
@@ -276,7 +275,7 @@ static struct optionItem *searchOption(const char const *optName){
 /**
 * \brief get User-ID from string
 *
-* \param string contains name od id
+* \param string contains name or id
 *
 * \return User-ID or 0
 * \retval uid
@@ -432,7 +431,7 @@ static void lsprint(const char const *path){
 
 /**
 * \brief prints the whole string and
-*		  escapes blanks and backslashes with backslash
+*		 escapes blanks and backslashes with backslash
 *
 * \param string to print
 */
