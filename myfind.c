@@ -265,9 +265,9 @@ static void do_file(char * dir_name,  char **parms){
 	int currentParam = 0;
 	struct stat newStatBuffer;
 	char *fileName = basename(dir_name);
-	int lstatMsg = lstat(dir_name, &newStatBuffer);
 	
-	if(errno != 0) errorMsg(SmthgWrdHpnd);
+	if(errno != 0) errorMsg(SmthgWrdHpnd);	
+	int lstatMsg = lstat(dir_name, &newStatBuffer);
 	if (lstatMsg == -1) errorMsg(LSTAT_Error);
 
 	
