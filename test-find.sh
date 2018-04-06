@@ -27,14 +27,14 @@ set -u          # terminate on uninitialized variables
 # the to be tested program
 TO_BE_TESTED_FIND="./myfind"
 # the known correct program
-KNOWN_CORRECT_FIND="/usr/bin/find"
+KNOWN_CORRECT_FIND="//usr/bin/find"
 # guess what ...
 QUIET=0
 VERBOSE=0
 FORCE=0
 RV=0
 
-readonly SIMPLEDIR="/var/tmp/test-find/full"
+readonly SIMPLEDIR="/var/tmp/test-find/simple"
 readonly   FULLDIR="/var/tmp/test-find/full"
 
 readonly        CORRECT_STDOUT=`mktemp --tmpdir        "known-correct-find-stdout.XXXXXXXXXX"`

@@ -3,14 +3,27 @@
 * Betriebssysteme My Find File
 * Beispiel 1
 *
-* @author Dominic Schebeck
-* @author Dominik Marcel Rychly
-* @author Thomas Neugschwandtner
+* @author Dominic Schebeck <ic17b049@technikum-wien.at>
+* @author Thomas Neugschwandtner <ic17b082@technikum-wien.at>
+* @author Dominik Rychly <ic17b052@technikum-wien.at>
 *
-* @date 03/13/2018
+* @date 04/06/2018
 *
 * @version 1.0
+*
+* @todo error handling printf()
+* @todo Optional: Current Path as fallback path
 */
+
+//found bug in reference program "/usr/local/bin/bic-myfind"
+//
+//find '/var/tmp/test-find/simple/file\with\escape\character' -name 'file\with\escape\character'
+//bic-myfind '/var/tmp/test-find/simple/file\with\escape\character' -name 'file\with\escape\character'
+//
+//different output
+//
+//myfind.c behaves like "/usr/bin/find"
+
 
 /*
 * ------------------------------------------------------includes----------
@@ -47,9 +60,11 @@ static void errorMsg(const int i);
 static void warnMsg(const int i);
 static void lsprint(const char const *path);
 static void spclPrint(const char const *str);
+static void usageMsg(void);
 
 //error/warn enum
-enum {	ExpParam,
+enum {	ExpPath,
+		ExpParam,
 		ExpOpt,
 		ExpOptAdditOpt,
 		UnknwnOpt,
@@ -86,6 +101,8 @@ int main(const int argc, char *argv[])
 	struct optionItem *optItem = NULL;
 	int optionPos = 0;
 
+	if(argc <= 1) errorMsg(ExpPath);
+	
 	for(int i = 0;i<argc;i++){
 		switch(i) {
 			case 0:
@@ -131,6 +148,7 @@ int main(const int argc, char *argv[])
 	
 	if(expParam > 0) errorMsg(ExpOptAdditOpt);
 	do_file(argv[1], &argv[2]);	
+	
 	return 0;
 }
 
@@ -148,11 +166,11 @@ static void errorMsg(const int i){
 	}else{
 
 		switch(i) {
-			
-			case ExpParam:			errx(99, "Parameter is missing"); break;
-			case ExpOpt:			errx(99, "Option is missing"); break;
-			case ExpOptAdditOpt:	errx(99, "Option is missing"); break;
-			case UnknwnOpt:			errx(99, "Unknown option"); break;
+			case ExpPath:			usageMsg(); errx(99, "Path is missing"); break;
+			case ExpParam:			usageMsg(); errx(99, "Parameter is missing"); break;
+			case ExpOpt:			usageMsg(); errx(99, "Option is missing"); break;
+			case ExpOptAdditOpt:	usageMsg(); errx(99, "Option is missing"); break;
+			case UnknwnOpt:			usageMsg(); errx(99, "Unknown option"); break;
 			case UnknwnUser:		errx(99, "Unknown user"); break;
 			case UnknwnFileType:	errx(99, "Unknown file-type"); break;
 			case CantOpenDir:		errx(99, "Can not open directory"); break;
@@ -184,11 +202,11 @@ static void warnMsg(const int i){
 	}else{
 
 		switch(i) {
-			
-			case ExpParam:			warn("Parameter is missing"); break;
-			case ExpOpt:			warn("Option is missing"); break;
-			case ExpOptAdditOpt:	warn("Option is missing"); break;
-			case UnknwnOpt:			warn("Unknown option"); break;
+			case ExpPath:			usageMsg(); warn("Path is missing"); break;
+			case ExpParam:			usageMsg(); warn("Parameter is missing"); break;
+			case ExpOpt:			usageMsg(); warn("Option is missing"); break;
+			case ExpOptAdditOpt:	usageMsg(); warn("Option is missing"); break;
+			case UnknwnOpt:			usageMsg(); warn("Unknown option"); break;
 			case UnknwnUser:		warn("Unknown user"); break;
 			case UnknwnFileType:	warn("Unknown file-type"); break;
 			case CantOpenDir:		warn("Can not open directory"); break;
@@ -565,5 +583,24 @@ static void spclPrint(const char const *str){
 	}
 	
 }
+
+/**
+* \brief prints the usage message
+*
+* \param void
+*/
+
+static void usageMsg(void){
+	printf("bic-myfind: Usage: bic-myfind directory <test-aktion> ...\n");
+    printf("    -user <name/uid>\n");
+    printf("    -name <glob-pattern>\n");
+    printf("    -type [bcdpfls]\n");
+    printf("    -print\n");
+    printf("    -ls\n");
+    printf("    -nouser\n");
+    printf("    -path <glob-pattern>\n");
+
+}
+
 
 //------------------------------------eof--------------------------------------------------
