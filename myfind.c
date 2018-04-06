@@ -63,7 +63,8 @@ static void spclPrint(const char const *str);
 static void usageMsg(void);
 
 //error/warn enum
-enum {	ExpPath,
+enum {	SmthgWrdHpnd,
+		ExpPath,
 		ExpParam,
 		ExpOpt,
 		ExpOptAdditOpt,
@@ -81,7 +82,8 @@ enum {	ExpPath,
 		Readlink_Error,
 		GetPwNam_Error,
 		Readdir_Error,
-		SmthgWrdHpnd
+		FFlush_Error
+		
 	 };
 
 /**
@@ -149,6 +151,11 @@ int main(const int argc, char *argv[])
 	if(expParam > 0) errorMsg(ExpOptAdditOpt);
 	do_file(argv[1], &argv[2]);	
 	
+	if(errno != 0) errorMsg(SmthgWrdHpnd);
+	int fflmsg = fflush(stdout);
+	if(fflmsg == EOF) errorMsg(FFlush_Error);
+	
+	
 	return 0;
 }
 
@@ -184,6 +191,8 @@ static void errorMsg(const int i){
 			case Readlink_Error:	errx(99, "READLINK Error"); break;
 			case GetPwNam_Error:	errx(99, "GETPWNAME Error"); break;
 			case Readdir_Error:		errx(99, "READDIR Error"); break;
+			case FFlush_Error:		errx(99, "FFLUSH Error"); break;
+			
 			default:				errx(999, "something weird happened"); break;
 		}
 	}
@@ -220,6 +229,8 @@ static void warnMsg(const int i){
 			case Readlink_Error:	warn("READLINK Warn"); break;
 			case GetPwNam_Error:	warn("GETPWNAME Warn"); break;
 			case Readdir_Error:		warn("READDIR Warn"); break;
+			case FFlush_Error:		warn("FFLUSH Error"); break;
+			
 			default:				warn("something weird happened"); break;
 		}
 	}
@@ -404,17 +415,14 @@ static uid_t getUidFromString(const char const *id){
 	
 	if(userinfo != NULL)	return userinfo->pw_uid;
 	
-	int tmpi = 0;
-	while(id[tmpi] != '\0'){
-		if(isdigit(id[tmpi]) == 0) return 0;
-		tmpi++;
-	}
-	
-	
-	
+
 	if(errno != 0) errorMsg(SmthgWrdHpnd);
-	long int userid = strtol(id, NULL, 10);
+	
+	char *endptr;
+	
+	long int userid = strtol(id, &endptr, 10);
 	if(errno != 0) errorMsg(StrToL_Error);
+	if(strlen(endptr) != 0) return 0;
 	
 	if(errno != 0) errorMsg(SmthgWrdHpnd);
 	userinfo =  getpwuid(userid);
@@ -460,7 +468,7 @@ static void lsprint(const char const *path){
 	printf(" ");
 	
 	
-	//
+	// POSIXLY_CORRECT (Lt. Lektor statisch Korrektur)
 	
 	printf("%3lu", buf.st_blocks/2);
 
